@@ -1,5 +1,7 @@
 ### mysql
 ---
+.js
+https://github.com/mysqljs/mysql
 
 *my.ini*
 mkdir /mysql/my.ini
