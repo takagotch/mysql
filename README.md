@@ -9,10 +9,12 @@ https://github.com/go-sql-driver/mysql
 *my.ini*
 mkdir /mysql/my.ini
 
-```
-```
+```js
 
 ```
+
+```go
+
 ```
 
 ```
