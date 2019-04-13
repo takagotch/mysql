@@ -143,11 +143,47 @@ connection.query(sql, function (error, redults, fields) {
 });
 
 
+connection.query('SELECT * FROM users WHERE id = ?', [userId], function (error, results, fields) {
+  if (error) throw error;
+});
 
 
+connection.query('UPDATE users SET foo = ?, bar = ?, baz = ? WHERE id = ?',  ['a', 'b', 'c', userId], function (error, results, fields) {
+  if (error) throw error;
+});
+
+var post = {id: 1, title: 'Hello MySQL'};
+var query = connection.query('INSERT INTO posts SET ?', post, function (error, results, fields) {
+  if (error) throw error;
+});
+console.log(query.sql);
+
+var CURRENT_TIMESTAMP = { toSqlString: function() { return 'CURENT_TIMESTAMP()'; } };
+var sql = mysql.format('UPDATE posts modified = ? WHERE id = ?', [CURRENT_TIMESTAMP, 42]);
+console.log(sql);
 
 
+var CURRENT_TIMESTAMP = mysql.raw('CURRENT_TIMESTAMP()');
+var sql = mysql.format('UPDATE posts SET modified = ? WHER id = ?', [CURRENT_TIMESTAMP, 42]);
+console.log(sql);
 
+
+var query = "SELECT * FROM posts WHERE title=" + mysql.escape("Hello MySQL");
+console.log(query);
+
+var sorter = 'date';
+var sql = 'SELECT * FROM posts ORDER BY ' + connection.escapeId(sorter);
+connection.query(sql, function (error, results, fields) {
+  if (error) throw error;
+});
+
+var sorter = 'date';
+var sql = 'SELECT * FROM posts ORDER BY ' + connection.escapeId('posts.' + sorter);
+// -> SELECT * FROM posts ORDER BY `posts`.`date`
+
+var sorter = 'date2';
+var sql = 'SELECT * FROM posts ORDER BY' + connection.escapeId(sorter, true);
+// -> SELECT * FROM posts ORDER BY `date.2`
 
 
 
