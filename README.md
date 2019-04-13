@@ -447,13 +447,15 @@ var connection = mysql.createConnection("mysql://localhost/test?flags=-FOUND_ROW
 var connection = mysql.createConnection({debug: true});
 
 var connection = mysql.createConnection({debug: ['ComQueryPacket', 'RowDataPacket']});
-
-
-
-
 ```
 
 ```go
+import "database/sql"
+import _ "github.com/go-sql-driver/mysql"
+
+db, err := sql.Open("mysql", "user:password@/dbname")
+
+
 
 ```
 
@@ -465,6 +467,7 @@ mysql -u root -e "CREATE DATABASE IF NOT EXISTS node_mysql_test"
 MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_DATABASE=node_mysql_test MYSQL_USER=root MYSQL_PASSWORD= FILTER=integration npm test
 
 
+go get -u github.com/go-sql-driver/mysql
 
 ```
 
