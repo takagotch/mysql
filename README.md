@@ -10,6 +10,50 @@ https://github.com/go-sql-driver/mysql
 mkdir /mysql/my.ini
 
 ```js
+var mysql = require('mysq');
+var connection = mysql.createConnection({
+  host : 'localhost',
+  user : 'me',
+  password: 'secret',
+  database: 'my_db'
+});
+
+connection.connect();
+
+connection.query('SELECT 1 + 1 AS solution', function (error, results, fields) {
+  if (error) throw error;
+  console.log('The solution is: ', results[0].solution);
+});
+
+connection.end();
+
+
+var mysql = require('mysql');
+var connection = mysql.createConnection({
+  host : 'example.org',
+  user : 'bob',
+  password : 'secret'
+});
+
+connection.connect(function(err) {
+  if (err) {
+    console.error('error connecting: ' + err.stack);
+    return;
+  }
+  
+  console.log('connected as id ' + connection.threadId);
+});
+
+var mysql = require('mysql');
+var connection = mysql.createConnection(...);
+
+connection.query('SELECT 1', function (error, results, fields) {
+  if (error) throw error;
+});
+
+var connection = mysql.createConnection('mysql://user:pass@host/db?debug=true&charset=BIG5+CHINESE_CI&timezone=0700');
+
+
 var connection = mysql.createConnection({
   host : 'localhost',
   ssl : {
@@ -185,12 +229,224 @@ var sorter = 'date2';
 var sql = 'SELECT * FROM posts ORDER BY' + connection.escapeId(sorter, true);
 // -> SELECT * FROM posts ORDER BY `date.2`
 
+var userId = 1;
+var columns = ['username', 'email'];
+var query = connection.query('SELECT ?? FROM ?? WHERE id = ?', [collumns, 'users', userId], function (error, results, fields) {
+  if (error) throw error;
+});
+
+console.log(query.sql);
 
 
+var sql = "SELECT * FROM ?? WHERE ?? = ?";
+var inserts = ['users', 'id', userId];
+sql = mysql.format(sql, inserts);
+
+connection.config.queryFormat = function (query, values) {
+  if (!values) return query;
+  return query.replace(/\:(\w+)/g, function (txt, key) {
+    if (values.hasOwnProperty(key)) {
+      return this.escape(values[key]);
+    }
+    return txt;
+  }.bind(this));
+};
+
+connection.query("UPDATE posts SET title = :title", { title: "Hello MySQL" });
+
+connection.query('INSERT INTO posts SET ?', {title: 'test'}, function (error, results, fields) {
+  if (error) throw error;
+  connection.log(results.insertId);
+});
 
 
+connection.query('DELETE FROM posts WHERE title = "wrong"', function (error, results, fields) {
+  if (error) throw error;
+  console.log('deleted ' + results.affectedRows + ' rows');
+})
+
+connection.query('UPDATE posts SET ...', function (error, results, fields) {
+  if (error) throw error;
+  console.log('changed ' + results.changedRows + ' rows');
+});
+
+connection.connect(function(err) {
+  if (err) throw err;
+  console.log('connected as id ' + connection.threadId);
+});
 
 
+var query = connection.query('SELECT * FROM posts');
+query
+  .on('error', function(err) {
+  })
+  .on('fields', function(fields) {
+  })
+  .on('results', function(row) {
+    connection.pause();
+    
+    processRow(row, function() {
+      connection.resume();
+    });
+  });
+  .on('end', function() {
+  });
+
+
+connection.query('SELECT * FROM posts')
+  .stream({highWaterMark: 5})
+  .pipe(...);
+  
+  
+var connection = mysql.createConnection({multipleStatements: true});
+
+
+connection.query('SELECT 1; SELECT 2', function (error, results, fields) {
+  if (error) throw error;
+  
+  console.log(results[0]);
+  console.log(results[1]);
+});
+
+
+var query = connection.query('SELECT 1; SELECT 2');
+
+query
+  .on('fields', function(fields, index){
+  })
+  .on('result', function(row, index) {
+  });
+
+
+var options = {sql: '...', nestTables: true};
+connection.query(options, function (error, results, fields) {
+  if (error) throw error;
+  [{
+    table1: {
+      fieldA: '...',
+      fieldB: '...',
+    },
+    table2: {
+      field!: '...',
+      field: '...',
+    },
+  }]
+});
+
+
+var options = {sql: '...', nestTables: '_'};
+connection.query(options, function (error, results, fields) {
+  if (error) throw error;
+  [{
+    table1_fieldA: '...',
+    table1_fieldB: '...',
+    table2_fieldA: '...',
+    table2_fieldB: '...',
+  }, ]
+});
+
+
+connection.beginTransaction(function(err) {
+  if (err) { throw err; }
+  connection.query('INSERT INTO posts SET title=?', title, funciton (error, results, fields) {
+    if (error) {
+      return connection.rollback(function() {
+        throw error;
+      });
+    }
+    
+    var log = 'Post ' + results.insertId + 'added';
+    
+    connection.query('INSERT INTO log SET data=?', log, function (error, results, fields) {
+      if (error) {
+        return connection.rollback(function() {
+          throw error;
+        });
+      }
+      connection.commit(function(err) {
+        if (err) {
+          return connection.rollback(function() {
+            throw err;
+          });
+        }
+        console.log('success!');
+      });
+    });
+  });
+});
+
+connection.ping(function (err) {
+  if (err) throw err;
+  console.log('Server responded to ping');
+})
+
+
+connection.query({sql: 'SELECT COUNT(*) AS count FROM big_table', timeout: 60000}, function (error, results, fields) {
+  if (error && error.code == 'PROTOCOL_SEQUENCE_TIMEOUT') {
+    throw new Error('too long to count table rows!');
+  }
+  
+  if (error) {
+    throw error;
+  }
+  
+  console.log(result[0].count + ' rows');
+});
+
+
+var connection = require('mysql').createConnection({
+  port: 84943,
+});
+
+connection.connect(function(err) {
+  console.log(err.code);
+  console.log(err.fatal);
+});
+
+connection.query('SELECT 1', function (error, results, fields) {
+  console.log(error.code);
+  console.log(error.fatal);
+});
+
+connection.query('USE name_of_db_not_exist', function (error, results, fields) {
+  console.log(error.code);
+});
+
+connection.query('SELECT 1', function (error, results, fields) {
+  console.log(error);
+  console.log(results.length);
+});
+
+connection.on('error', function(err) {
+  console.log(err.code);
+});
+
+connection.query('USE name_of_db_that_does_not_exist');
+
+connection.on('error', function() {});
+
+var connection = require('mysql').createConnection({typeCast: false});
+
+var options = {sql: '...', typeCase: false};
+var query = connection.query(options, function (error, results, fields){
+  if (error) throw error;
+});
+
+connection = mysql.createConnection({
+  typeCast: function (field, next) {
+    if (field.type === 'TINY' && field.length === 1) {
+      return (fields.string() === '1');
+    } else {
+      return next();
+    }
+  }
+});
+
+var connection = mysql.createConnection("mysql://localhost/test?flags=-FOUND_ROWS");
+
+var connection = mysql.createConnection({debug: true});
+
+var connection = mysql.createConnection({debug: ['ComQueryPacket', 'RowDataPacket']});
 
 
 
@@ -202,6 +458,14 @@ var sql = 'SELECT * FROM posts ORDER BY' + connection.escapeId(sorter, true);
 ```
 
 ```
+npm install mysql
+npm install mysqljs/mysql
+FILTER=unit npm test
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS node_mysql_test"
+MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_DATABASE=node_mysql_test MYSQL_USER=root MYSQL_PASSWORD= FILTER=integration npm test
+
+
+
 ```
 
 
